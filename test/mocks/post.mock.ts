@@ -1,6 +1,6 @@
 import { CreatePostDto } from "src/posts/dto/create-post.dto";
 import { UpdatePostDto } from "src/posts/dto/update-post.dto";
-import { Post } from "src/posts/entity";
+import { Post } from "src/posts/entities/post.entity";
 
 export function mockPost(overrides: Partial<Post> = {}): Post {
     return ({

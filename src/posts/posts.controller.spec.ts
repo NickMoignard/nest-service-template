@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PostsController } from './controller';
-import { PostsService } from './service';
+import { PostsController } from './posts.controller';
+import { PostsService } from './posts.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { repositoryMockFactory } from 'test-utils/repositoryMockFactory';
-import { Post } from './entity';
+import { Post } from './entities/post.entity';
 import { CreatePostDto } from './dto/create-post.dto';
-import { PostNotFoundError } from './errors';
+import { PostNotFoundError } from './posts.errors';
 import { NotFoundException } from '@nestjs/common';
 import { mockCreatePostDto, mockPost, mockUpdatePostDto } from '../../test/mocks/post.mock';
 

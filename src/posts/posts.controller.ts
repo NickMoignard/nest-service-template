@@ -1,9 +1,9 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, NotFoundException, InternalServerErrorException } from '@nestjs/common';
-import { PostsService } from './service';
+import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import { Post as PostEntity } from './entity';
-import { PostNotFoundError } from './errors';
+import { Post as PostEntity } from './entities/post.entity';
+import { PostNotFoundError } from './posts.errors';
 
 @Controller('posts')
 export class PostsController {

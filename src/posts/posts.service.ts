@@ -3,9 +3,9 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm/repository/Repository';
-import { Post } from './entity';
+import { Post } from './entities/post.entity';
 import { error } from 'console';
-import { PostNotFoundError } from './errors';
+import { PostNotFoundError } from './posts.errors';
 import { EntityNotFoundError } from 'typeorm/error/EntityNotFoundError';
 
 @Injectable()
