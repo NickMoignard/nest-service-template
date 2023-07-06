@@ -5,6 +5,8 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { repositoryMockFactory } from 'test-utils/repositoryMockFactory';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { mockCreatePostDto, mockPost, mockUpdatePostDto } from '../../test/mocks/post.mock';
+import { EntityNotFoundError } from 'typeorm';
+import { PostNotFoundError } from './errors';
 
 
 describe('PostsService', () => {
@@ -92,39 +94,64 @@ describe('PostsService', () => {
   });
 
   describe('when updating a post', () => {
-    const mockedUpdatePostDto: UpdatePostDto = mockUpdatePostDto();
+    describe('and when the post does not exist', () => {
+      beforeEach(() => {
+        postsRepository.update.mockRejectedValueOnce(new EntityNotFoundError(Post, undefined));
+      });
 
-    beforeEach(() => {
-      postsRepository.update.mockResolvedValueOnce({
-        id: 69,
-        ...mockedUpdatePostDto,
+      it('should throw a post not found error', async () => {
+        await expect(service.update(69, mockUpdatePostDto())).rejects.toThrowError(PostNotFoundError);
       });
     });
 
-    it('should update the post', async () => {
-      await service.update(69, mockedUpdatePostDto);
-      expect(postsRepository.update).toHaveBeenCalledWith(69, mockedUpdatePostDto);
-    });
+    describe('and when the post exists', () => {
+      const mockedUpdatePostDto: UpdatePostDto = mockUpdatePostDto();
 
-    it('should resolve', async () => {
-      await expect(service.update(69, mockedUpdatePostDto)).resolves.toBeUndefined();
+      beforeEach(() => {
+        postsRepository.update.mockResolvedValueOnce({
+          id: 69,
+          ...mockedUpdatePostDto,
+        });
+      });
+
+      it('should update the post', async () => {
+        await service.update(69, mockedUpdatePostDto);
+        expect(postsRepository.update).toHaveBeenCalledWith(69, mockedUpdatePostDto);
+      });
+
+      it('should resolve', async () => {
+        await expect(service.update(69, mockedUpdatePostDto)).resolves.toBeUndefined();
+      });
     });
   });
 
   describe('when removing a post', () => {
-    const mockedPost = mockPost();
 
-    beforeEach(() => {
-      postsRepository.delete.mockResolvedValueOnce(mockedPost);
+    describe('and when the post does not exist', () => {
+      beforeEach(() => {
+        postsRepository.delete.mockRejectedValueOnce(new EntityNotFoundError(Post, undefined));
+      });
+
+      it('should throw a post not found error', async () => {
+        await expect(service.remove(69)).rejects.toThrowError(PostNotFoundError);
+      });
     });
 
-    it('should remove the post', async () => {
-      await service.remove(mockedPost.id);
-      expect(postsRepository.delete).toHaveBeenCalledWith(mockedPost.id);
-    });
+    describe('and when the post exists', () => {
+      const mockedPost = mockPost();
 
-    it('should resolve', async () => {
-      await expect(service.remove(mockedPost.id)).resolves.toBeUndefined();
+      beforeEach(() => {
+        postsRepository.delete.mockResolvedValueOnce(mockedPost);
+      });
+
+      it('should remove the post', async () => {
+        await service.remove(mockedPost.id);
+        expect(postsRepository.delete).toHaveBeenCalledWith(mockedPost.id);
+      });
+
+      it('should resolve', async () => {
+        await expect(service.remove(mockedPost.id)).resolves.toBeUndefined();
+      });
     });
   });
 });

@@ -5,6 +5,9 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { repositoryMockFactory } from 'test-utils/repositoryMockFactory';
 import { Post } from './entity';
 import { CreatePostDto } from './dto/create-post.dto';
+import { PostNotFoundError } from './errors';
+import { NotFoundException } from '@nestjs/common';
+import { mockCreatePostDto, mockPost, mockUpdatePostDto } from '../../test/mocks/post.mock';
 
 describe('PostsController', () => {
   let controller: PostsController;
@@ -32,10 +35,7 @@ describe('PostsController', () => {
 
   describe('when creating a post', () => {
     let result: Post;
-    const dto: CreatePostDto = {
-      title: 'mocked-post-title',
-      body: 'mocked-post-body',
-    };;
+    const dto: CreatePostDto = mockCreatePostDto();
 
     beforeEach(async () => {
       jest.spyOn(service, 'create').mockResolvedValueOnce({
@@ -62,16 +62,8 @@ describe('PostsController', () => {
   describe('when finding all posts', () => {
     let result: Post[];
     const mockedPosts = [
-      {
-        id: 69,
-        title: 'mocked-post-title',
-        body: 'mocked-post-body',
-      },
-      {
-        id: 420,
-        title: 'mocked-post-title',
-        body: 'mocked-post-body',
-      }
+      mockPost({ id: 69 }),
+      mockPost({ id: 420 }),
     ];
 
     beforeEach(async () => {
@@ -90,11 +82,7 @@ describe('PostsController', () => {
 
   describe('when finding one post', () => {
     let result: Post;
-    const mockedPost = {
-      id: 69,
-      title: 'mocked-post-title',
-      body: 'mocked-post-body',
-    };
+    const mockedPost = mockPost();
 
     beforeEach(async () => {
       jest.spyOn(service, 'findOne').mockResolvedValueOnce(mockedPost);
@@ -109,61 +97,76 @@ describe('PostsController', () => {
       expect(result).toEqual(mockedPost);
     });
   });
+
   describe('when updating a post', () => {
-    let result: Post;
-    const mockedUpdatePostDto = {
-      title: 'mocked-post-title',
-      body: 'mocked-post-body',
-    };
-    const mockedPost = {
-      id: 69,
-      title: 'mocked-post-title',
-      body: 'mocked-post-body',
-    };
+    describe('and when the post does not exist', () => {
+      beforeEach(() => {
+        jest.spyOn(service, 'update').mockRejectedValueOnce(new PostNotFoundError());
+      });
 
-    beforeEach(async () => {
-      jest.spyOn(service, 'findOne').mockResolvedValueOnce(mockedPost);
-      jest.spyOn(service, 'update').mockResolvedValueOnce();
-      result = await controller.update('69', mockedUpdatePostDto);
+      it('should throw a not found exception', async () => {
+        await expect(controller.update('69', {})).rejects.toThrowError(NotFoundException);
+      });
     });
 
-    it('should try to find a post', () => {
-      expect(service.findOne).toHaveBeenCalledWith(69);
-    });
+    describe('and when the post exists', () => {
+      let result: Post;
+      const mockedUpdatePostDto = mockUpdatePostDto({ title: 'updated-post-title' });
+      const mockedPost = mockPost(mockedUpdatePostDto);
 
-    it('should try to update a post', () => {
-      expect(service.update).toHaveBeenCalledWith(69, mockedUpdatePostDto);
-    });
+      beforeEach(async () => {
+        jest.spyOn(service, 'findOne').mockResolvedValueOnce(mockedPost);
+        jest.spyOn(service, 'update').mockResolvedValueOnce();
+        result = await controller.update('69', mockedUpdatePostDto);
+      });
 
-    it('should return updated post', () => {
-      expect(result).toEqual(mockedPost);
+      it('should try to find a post', () => {
+        expect(service.findOne).toHaveBeenCalledWith(69);
+      });
+
+      it('should try to update a post', () => {
+        expect(service.update).toHaveBeenCalledWith(69, mockedUpdatePostDto);
+      });
+
+      it('should return updated post', () => {
+        expect(result).toEqual(mockedPost);
+      });
     });
   });
 
   describe('when deleting a post', () => {
-    let result: Post;
-    const mockedPost = {
-      id: 69,
-      title: 'mocked-post-title',
-      body: 'mocked-post-body',
-    };
 
-    beforeEach(async () => {
-      jest.spyOn(service, 'findOne').mockResolvedValueOnce(mockedPost);
-      jest.spyOn(service, 'remove').mockResolvedValueOnce();
-      result = await controller.remove('69');
+    describe('and when the post does not exist', () => {
+      beforeEach(() => {
+        jest.spyOn(service, 'findOne').mockRejectedValueOnce(new PostNotFoundError());
+      });
+
+      it('should throw a not found exception', async () => {
+        await expect(controller.remove('69')).rejects.toThrowError(NotFoundException);
+      });
     });
 
-    it('should try to find a post', () => {
-      expect(service.findOne).toHaveBeenCalledWith(69);
-    });
+    describe('and when the post exists', () => {
+      let result: Post;
+      const mockedPost = mockPost();
 
-    it('should try to delete a post', () => {
-      expect(service.remove).toHaveBeenCalledWith(69);
-    });
+      beforeEach(async () => {
+        jest.spyOn(service, 'findOne').mockResolvedValueOnce(mockedPost);
+        jest.spyOn(service, 'remove').mockResolvedValueOnce();
+        result = await controller.remove('69');
+      });
 
-    it('should return deleted post', () => {
-      expect(result).toEqual(mockedPost);
+      it('should try to find a post', () => {
+        expect(service.findOne).toHaveBeenCalledWith(69);
+      });
+
+      it('should try to delete a post', () => {
+        expect(service.remove).toHaveBeenCalledWith(69);
+      });
+
+      it('should return deleted post', () => {
+        expect(result).toEqual(mockedPost);
+      });
     });
   });
 });

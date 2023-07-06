@@ -3,7 +3,6 @@ import { PostsService } from './service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { Post as PostEntity } from './entity';
-import { EntityNotFoundError } from 'typeorm';
 import { PostNotFoundError } from './errors';
 
 @Controller('posts')
@@ -50,11 +49,7 @@ export class PostsController {
       }
     }
 
-    try {
-      this.postsService.remove(+id);
-    } catch (error) {
-      throw new InternalServerErrorException();
-    }
+    await this.postsService.remove(+id);
 
     return post;
   }
