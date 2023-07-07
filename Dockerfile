@@ -1,4 +1,4 @@
-FROM node:18-alpine as builder
+FROM node:18-alpine
 
 ARG PNPM_HOME="/usr/local/shared/pnpm/shared/shared/v3/shared/v3"
 ENV PNPM_HOME=${PNPM_HOME}
@@ -17,4 +17,10 @@ RUN pnpm i -g @nestjs/cli
 COPY ./pruned/ /app
 WORKDIR /app
 
-RUN turbo prune --scope="nest-service-template" --docker
+RUN pnpm i
+
+RUN turbo run build --filter=nest-service-template...
+
+CMD ["turbo", "run", "start"]
+
+# RUN turbo prune --scope="nest-service-template" --docker
