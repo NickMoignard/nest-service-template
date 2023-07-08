@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:18-alpine as base
 
 ARG PNPM_HOME="/usr/local/shared/pnpm/shared/shared/v3/shared/v3"
 ENV PNPM_HOME=${PNPM_HOME}
@@ -14,13 +14,28 @@ RUN pnpm setup
 RUN pnpm i -g turbo
 RUN pnpm i -g @nestjs/cli
 
-COPY ./pruned/ /app
+FROM base as installer
+RUN apk add --no-cache libc6-compat
+RUN apk update
 WORKDIR /app
 
-RUN pnpm i
 
-RUN turbo run build --filter=nest-service-template...
+COPY . .
+RUN pnpm i --prod --frozen-lockfile
 
-CMD ["turbo", "run", "start"]
+FROM installer as builder
+WORKDIR /app
+ARG TURBO_TEAM
+ENV TURBO_TEAM=$TURBO_TEAM
 
-# RUN turbo prune --scope="nest-service-template" --docker
+ARG TURBO_TOKEN
+ENV TURBO_TOKEN=$TURBO_TOKEN
+
+RUN pnpm run build
+
+FROM base as runner
+WORKDIR /app
+
+COPY --from=builder /app .
+
+CMD ["node", "dist/main"]
